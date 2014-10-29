@@ -1,0 +1,11 @@
+[ScopeConfig]
+_DisplayName=My Videos
+_Description=This is an Ubuntu search plugin that scans the device for videos and allows them to be searched and displayed in the Dash.
+Author=Canonical Ltd.
+Art=./screenshot.jpg
+Icon=./icon.png
+_SearchHint=
+HotKey=
+
+[Appearance]
+LogoOverlayColor=#26000000

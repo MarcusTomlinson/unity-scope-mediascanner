@@ -14,26 +14,30 @@
 #include <unity/scopes/testing/Result.h>
 #include <unity/scopes/testing/TypedScopeFixture.h>
 
-#include "../src/music-scope.h"
+#include "../src/mymusic/music-scope.h"
 
 using namespace mediascanner;
 using namespace unity::scopes;
 using ::testing::_;
 using ::testing::AllOf;
-using ::testing::Return;
+using ::testing::ElementsAre;
 using ::testing::Matcher;
+using ::testing::Property;
+using ::testing::Return;
+using ::testing::Truly;
 
 class MusicScopeTest : public unity::scopes::testing::TypedScopeFixture<MusicScope> {
 protected:
     virtual void SetUp() {
         cachedir = "/tmp/mediastore.XXXXXX";
         // mkdtemp edits the string in place without changing its length
-        if (mkdtemp(const_cast<char*>(cachedir.c_str())) == NULL) {
+        if (mkdtemp(const_cast<char*>(cachedir.c_str())) == nullptr) {
             throw std::runtime_error(strerror(errno));
         }
         ASSERT_EQ(0, setenv("MEDIASCANNER_CACHEDIR", cachedir.c_str(), 1));
         store.reset(new MediaStore(MS_READ_WRITE));
 
+        set_scope_directory("/no/such/directory");
         unity::scopes::testing::TypedScopeFixture<MusicScope>::SetUp();
     }
 
@@ -147,6 +151,14 @@ MATCHER_P2(ResultProp, prop, value, "") {
     return arg.contains(prop) && arg[prop] == unity::scopes::Variant(value);
 }
 
+MATCHER_P(ResultUriMatchesCannedQuery, q, "") {
+    *result_listener << "result.uri is " << arg.uri();
+    auto const query = unity::scopes::CannedQuery::from_uri(arg.uri());
+    return query.scope_id() == q.scope_id()
+        && query.query_string() == q.query_string()
+        && query.department_id() == q.department_id();
+}
+
 TEST_F(MusicScopeTest, QueryResult) {
     populateStore();
 
@@ -154,15 +166,25 @@ TEST_F(MusicScopeTest, QueryResult) {
     SearchMetadata hints("en_AU", "phone");
     auto query = scope->search(q, hints);
 
+    Category::SCPtr artists_category = std::make_shared<unity::scopes::testing::Category>(
+        "artists", "Artists", "icon", CategoryRenderer());
     Category::SCPtr songs_category = std::make_shared<unity::scopes::testing::Category>(
         "songs", "Tracks", "icon", CategoryRenderer());
     Category::SCPtr albums_category = std::make_shared<unity::scopes::testing::Category>(
         "albums", "Albums", "icon", CategoryRenderer());
     unity::scopes::testing::MockSearchReply reply;
+    EXPECT_CALL(reply, register_category("artists", _, _, _))
+        .WillOnce(Return(artists_category));
     EXPECT_CALL(reply, register_category("songs", _, _, _))
         .WillOnce(Return(songs_category));
     EXPECT_CALL(reply, register_category("albums", _, _, _))
         .WillOnce(Return(albums_category));
+
+    EXPECT_CALL(reply, push(Matcher<CategorisedResult const&>(AllOf(
+            ResultUriMatchesCannedQuery(CannedQuery("mediascanner-music", "The John Butler Trio", "albums_of_artist")),
+            ResultProp("title", "The John Butler Trio")))))
+        .WillOnce(Return(true));
+
     EXPECT_CALL(reply, push(Matcher<CategorisedResult const&>(AllOf(
             ResultProp("uri", "file:///path/foo7.ogg"),
             ResultProp("dnd_uri", "file:///path/foo7.ogg"),
@@ -193,15 +215,23 @@ TEST_F(MusicScopeTest, ShortQuery) {
     SearchMetadata hints("en_AU", "phone");
     auto query = scope->search(q, hints);
 
+    Category::SCPtr artists_category = std::make_shared<unity::scopes::testing::Category>(
+        "artists", "Artists", "icon", CategoryRenderer());
     Category::SCPtr songs_category = std::make_shared<unity::scopes::testing::Category>(
         "songs", "Songs", "icon", CategoryRenderer());
     Category::SCPtr albums_category = std::make_shared<unity::scopes::testing::Category>(
         "albums", "Albums", "icon", CategoryRenderer());
     unity::scopes::testing::MockSearchReply reply;
+    EXPECT_CALL(reply, register_category("artists", _, _, _))
+        .WillOnce(Return(artists_category));
     EXPECT_CALL(reply, register_category("songs", _, _, _))
         .WillOnce(Return(songs_category));
     EXPECT_CALL(reply, register_category("albums", _, _, _))
         .WillOnce(Return(albums_category));
+    EXPECT_CALL(reply, push(Matcher<CategorisedResult const&>(AllOf(
+            ResultUriMatchesCannedQuery(CannedQuery("mediascanner-music", "The John Butler Trio", "albums_of_artist")),
+            ResultProp("title", "The John Butler Trio")))))
+        .WillOnce(Return(true));
     EXPECT_CALL(reply, push(Matcher<CategorisedResult const&>(ResultProp("title", "One Way Road"))))
         .WillOnce(Return(true));
     EXPECT_CALL(reply, push(Matcher<CategorisedResult const&>(ResultProp("title", "Revolution"))))
@@ -226,28 +256,23 @@ TEST_F(MusicScopeTest, SurfacingQuery) {
     Category::SCPtr songs_category = std::make_shared<unity::scopes::testing::Category>(
         "songs", "Tracks", "icon", CategoryRenderer());
     Category::SCPtr albums_category = std::make_shared<unity::scopes::testing::Category>(
-        "albums", "Albums", "icon", CategoryRenderer());
+        "albums", "Artists", "icon", CategoryRenderer());
     unity::scopes::testing::MockSearchReply reply;
 
     EXPECT_CALL(reply, register_departments(_));
-    EXPECT_CALL(reply, register_category("albums", _, _, _))
+    EXPECT_CALL(reply, register_category("artists", _, _, _))
         .WillOnce(Return(albums_category));
 
     EXPECT_CALL(reply, push(Matcher<CategorisedResult const&>(AllOf(
-            ResultProp("title", "Spiderbait"),
-            ResultProp("isalbum", true)))))
+                        ResultUriMatchesCannedQuery(CannedQuery("mediascanner-music", "Spiderbait", "albums_of_artist")),
+                        ResultProp("title", "Spiderbait")
+                        ))))
         .WillOnce(Return(true));
+
     EXPECT_CALL(reply, push(Matcher<CategorisedResult const&>(AllOf(
-            ResultProp("title", "Ivy and the Big Apples"),
-            ResultProp("isalbum", true)))))
-        .WillOnce(Return(true));
-    EXPECT_CALL(reply, push(Matcher<CategorisedResult const&>(AllOf(
-            ResultProp("title", "Sunrise Over Sea"),
-            ResultProp("isalbum", true)))))
-        .WillOnce(Return(true));
-    EXPECT_CALL(reply, push(Matcher<CategorisedResult const&>(AllOf(
-            ResultProp("title", "April Uprising"),
-            ResultProp("isalbum", true)))))
+                        ResultUriMatchesCannedQuery(CannedQuery("mediascanner-music", "The John Butler Trio", "albums_of_artist")),
+                        ResultProp("title", "The John Butler Trio"))
+            )))
         .WillOnce(Return(true));
 
     SearchReplyProxy proxy(&reply, [](SearchReply*){});
@@ -327,12 +352,129 @@ TEST_F(MusicScopeTest, PreviewSong) {
     ActionMetadata hints("en_AU", "phone");
     auto previewer = scope->preview(result, hints);
 
-    // MockPreviewReply is currently broken and can't be instantiated.
-#if 0
     unity::scopes::testing::MockPreviewReply reply;
+    EXPECT_CALL(reply, register_layout(_))
+        .WillOnce(Return(true));
+    EXPECT_CALL(reply, push(Matcher<PreviewWidgetList const&>(ElementsAre(
+        AllOf(
+            Property(&PreviewWidget::id, "art"),
+            Property(&PreviewWidget::widget_type, "image"),
+            Truly([](const PreviewWidget &w) -> bool {
+                    return w.attribute_mappings().at("source") == "art";
+                })
+            ),
+        AllOf(
+            Property(&PreviewWidget::id, "header"),
+            Property(&PreviewWidget::widget_type, "header"),
+            Truly([](const PreviewWidget &w) -> bool {
+                    return
+                        w.attribute_mappings().at("title") == "title" &&
+                        w.attribute_mappings().at("subtitle") == "artist";
+                })
+            ),
+        AllOf(
+            Property(&PreviewWidget::id, "actions"),
+            Property(&PreviewWidget::widget_type, "actions"),
+            Truly([](const PreviewWidget &w) -> bool {
+                    const auto actions = w.attribute_values().at("actions").get_array();
+                    if (actions.size() != 1) {
+                        return false;
+                    }
+                    const auto play = actions[0].get_dict();
+                    return
+                        play.at("id").get_string() == "play" &&
+                        play.at("uri").get_string() == "music:///xyz";
+                })
+            ),
+        AllOf(
+            Property(&PreviewWidget::id, "tracks"),
+            Property(&PreviewWidget::widget_type, "audio"),
+            Truly([](const PreviewWidget &w) -> bool {
+                    const auto tracks = w.attribute_values().at("tracks").get_array();
+                    if (tracks.size() != 1) {
+                        return false;
+                    }
+                    const auto track = tracks[0].get_dict();
+                    return
+                        track.at("title").get_string() == "Song title" &&
+                        track.at("source").get_string() == "file:///xyz" &&
+                        track.at("length").get_int() == 42;
+                })
+            )))))
+        .WillOnce(Return(true));
+
     PreviewReplyProxy proxy(&reply, [](PreviewReply*){});
     previewer->run(proxy);
-#endif
+}
+
+TEST_F(MusicScopeTest, PreviewAlbum) {
+    populateStore();
+
+    unity::scopes::testing::Result result;
+    result.set_uri("album:///The%20John%20Butler%20Trio/April%20Uprising");
+    result.set_title("April Uprising");
+    result["artist"] = "The John Butler Trio";
+    result["album"] = "April Uprising";
+    result["isalbum"] = true;
+
+    ActionMetadata hints("en_AU", "phone");
+    auto previewer = scope->preview(result, hints);
+
+    unity::scopes::testing::MockPreviewReply reply;
+    EXPECT_CALL(reply, register_layout(_));
+    EXPECT_CALL(reply, push(Matcher<PreviewWidgetList const&>(ElementsAre(
+        AllOf(
+            Property(&PreviewWidget::id, "art"),
+            Property(&PreviewWidget::widget_type, "image"),
+            Truly([](const PreviewWidget &w) -> bool {
+                    return w.attribute_mappings().at("source") == "art";
+                })
+            ),
+        AllOf(
+            Property(&PreviewWidget::id, "header"),
+            Property(&PreviewWidget::widget_type, "header"),
+            Truly([](const PreviewWidget &w) -> bool {
+                    return
+                        w.attribute_mappings().at("title") == "title" &&
+                        w.attribute_mappings().at("subtitle") == "artist";
+                })
+            ),
+        AllOf(
+            Property(&PreviewWidget::id, "actions"),
+            Property(&PreviewWidget::widget_type, "actions"),
+            Truly([](const PreviewWidget &w) -> bool {
+                    const auto actions = w.attribute_values().at("actions").get_array();
+                    if (actions.size() != 1) {
+                        return false;
+                    }
+                    const auto play = actions[0].get_dict();
+                    return
+                        play.at("id").get_string() == "play" &&
+                        play.at("uri").get_string() == "album:///The%20John%20Butler%20Trio/April%20Uprising";
+                })
+            ),
+        AllOf(
+            Property(&PreviewWidget::id, "tracks"),
+            Property(&PreviewWidget::widget_type, "audio"),
+            Truly([](const PreviewWidget &w) -> bool {
+                    const auto tracks = w.attribute_values().at("tracks").get_array();
+                    if (tracks.size() != 2) {
+                        return false;
+                    }
+                    const auto track1 = tracks[0].get_dict();
+                    const auto track2 = tracks[1].get_dict();
+                    return
+                        track1.at("title").get_string() == "Revolution" &&
+                        track1.at("source").get_string() == "file:///path/foo6.ogg" &&
+                        track1.at("length").get_int() == 305 &&
+                        track2.at("title").get_string() == "One Way Road" &&
+                        track2.at("source").get_string() == "file:///path/foo7.ogg" &&
+                        track2.at("length").get_int() == 185;
+                })
+            )))));
+
+    PreviewReplyProxy proxy(&reply, [](PreviewReply*){});
+    previewer->run(proxy);
 }
 
 int main(int argc, char **argv) {

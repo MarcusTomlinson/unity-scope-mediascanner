@@ -14,26 +14,30 @@
 #include <unity/scopes/testing/Result.h>
 #include <unity/scopes/testing/TypedScopeFixture.h>
 
-#include "../src/video-scope.h"
+#include "../src/myvideos/video-scope.h"
 
 using namespace mediascanner;
 using namespace unity::scopes;
 using ::testing::_;
 using ::testing::AllOf;
-using ::testing::Return;
+using ::testing::ElementsAre;
 using ::testing::Matcher;
+using ::testing::Property;
+using ::testing::Return;
+using ::testing::Truly;
 
 class VideoScopeTest : public unity::scopes::testing::TypedScopeFixture<VideoScope> {
 protected:
     virtual void SetUp() {
         cachedir = "/tmp/mediastore.XXXXXX";
         // mkdtemp edits the string in place without changing its length
-        if (mkdtemp(const_cast<char*>(cachedir.c_str())) == NULL) {
+        if (mkdtemp(const_cast<char*>(cachedir.c_str())) == nullptr) {
             throw std::runtime_error(strerror(errno));
         }
         ASSERT_EQ(0, setenv("MEDIASCANNER_CACHEDIR", cachedir.c_str(), 1));
         store.reset(new MediaStore(MS_READ_WRITE));
 
+        set_scope_directory("/no/such/directory");
         unity::scopes::testing::TypedScopeFixture<VideoScope>::SetUp();
     }
 
@@ -233,12 +237,44 @@ TEST_F(VideoScopeTest, PreviewVideo) {
     ActionMetadata hints("en_AU", "phone");
     auto previewer = scope->preview(result, hints);
 
-    // MockPreviewReply is currently broken and can't be instantiated.
-#if 0
     unity::scopes::testing::MockPreviewReply reply;
+    EXPECT_CALL(reply, register_layout(_))
+        .WillOnce(Return(true));
+    EXPECT_CALL(reply, push(Matcher<PreviewWidgetList const&>(ElementsAre(
+        AllOf(
+            Property(&PreviewWidget::id, "video"),
+            Property(&PreviewWidget::widget_type, "video"),
+            Truly([](const PreviewWidget &w) -> bool {
+                    return
+                        w.attribute_values().at("source").get_string() == "video:///xyz" &&
+                        w.attribute_mappings().at("screenshot") == "art";
+                })
+            ),
+        AllOf(
+            Property(&PreviewWidget::id, "header"),
+            Property(&PreviewWidget::widget_type, "header"),
+            Truly([](const PreviewWidget &w) -> bool {
+                    return w.attribute_mappings().at("title") == "title";
+                })
+            ),
+        AllOf(
+            Property(&PreviewWidget::id, "actions"),
+            Property(&PreviewWidget::widget_type, "actions"),
+            Truly([](const PreviewWidget &w) -> bool {
+                    const auto actions = w.attribute_values().at("actions").get_array();
+                    if (actions.size() != 1) {
+                        return false;
+                    }
+                    const auto play = actions[0].get_dict();
+                    return
+                        play.at("id").get_string() == "play" &&
+                        play.at("uri").get_string() == "video:///xyz";
+                })
+            )))))
+        .WillOnce(Return(true));
+
     PreviewReplyProxy proxy(&reply, [](PreviewReply*){});
     previewer->run(proxy);
-#endif
 }
 
 int main(int argc, char **argv) {
