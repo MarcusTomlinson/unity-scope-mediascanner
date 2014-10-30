@@ -6,15 +6,16 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: unity-scope-mediascanner\n"
-"Report-Msgid-Bugs-To: FULL NAME <EMAIL@ADDRESS>\n"
+"Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2014-09-16 13:50+0800\n"
-"PO-Revision-Date: 2014-08-26 08:46+0000\n"
+"PO-Revision-Date: 2014-10-13 06:45+0000\n"
 "Last-Translator: Fohanno Thierry <thierry.fohanno@ofis-bzh.org>\n"
 "Language-Team: Breton <br@li.org>\n"
+"Language: br\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Launchpad-Export-Date: 2014-10-09 06:37+0000\n"
+"X-Launchpad-Export-Date: 2014-10-16 05:44+0000\n"
 "X-Generator: Launchpad (build 17196)\n"
 
 #: ../src/music-scope.cpp:219 ../src/music-scope.cpp:280
@@ -62,11 +63,11 @@ msgstr "7digital"
 
 #: ../src/musicaggregatorquery.cpp:215
 msgid "Nearby Events on Songkick"
-msgstr ""
+msgstr "Darvoudoù nepell war Songkick"
 
 #: ../src/musicaggregatorquery.cpp:217
 msgid "Songkick"
-msgstr ""
+msgstr "Songkick"
 
 #: ../src/video-scope.cpp:141
 msgid "Everything"
@@ -129,15 +130,14 @@ msgstr "Diskwel an disoc'hoù eus 7digital"
 
 #: tmp/musicaggregator-settings.ini.in.in.h:3
 msgid "Display results from Songkick"
-msgstr ""
+msgstr "Diskwel an disoc'hoù eus Songkick"
 
 #: tmp/musicaggregator.ini.in.in.h:1
 msgid "Music"
 msgstr "Sonerezh"
 
 #: tmp/musicaggregator.ini.in.in.h:2
-msgid ""
-"This is an Ubuntu search plugin that merges all music sources into one."
+msgid "This is an Ubuntu search plugin that merges all music sources into one."
 msgstr ""
 "Hemañ zo ul lugant enklask Ubuntu hag a gendeuz an holl vammennoù sonerezh "
 "en unan hepken."
@@ -155,8 +155,7 @@ msgid "Video"
 msgstr "Video"
 
 #: tmp/videoaggregator.ini.in.in.h:2
-msgid ""
-"This is an Ubuntu search plugin that merges all video sources into one."
+msgid "This is an Ubuntu search plugin that merges all video sources into one."
 msgstr ""
 "Hemañ zo ul lugant enklask Ubuntu hag a gendeuz an holl vammennoù videoioù "
 "en unan hepken."
