@@ -1,3 +1,27 @@
+unity-scope-mediascanner (0.2+15.04.20141110~rtm-0ubuntu1) 14.09; urgency=low
+
+  [ CI bot ]
+  * Resync trunk
+
+  [ Alejandro J. Cura ]
+  * Remove header background from .ini file (LP: #1387216)
+
+  [ Timo Jyrinki ]
+  * Merge translation update commits 199-205 from trunk.
+
+  [ Ubuntu daily release ]
+  * New rebuild forced
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Mon, 10 Nov 2014 18:26:44 +0000
+
+unity-scope-mediascanner (0.2+14.10.20141009-0ubuntu1) utopic; urgency=low
+
+  [ Pawel Stolowski ]
+  * Adjusted the regular expression used to find videos captured by
+    camera app. (LP: #1379350)
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Thu, 09 Oct 2014 15:01:01 +0000
+
 unity-scope-mediascanner (0.2+14.10.20141007-0ubuntu1) utopic; urgency=low
 
   [ Chris Wayne ]
