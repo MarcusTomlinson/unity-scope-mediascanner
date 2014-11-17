@@ -2,8 +2,8 @@
 _DisplayName=Music
 _Description=This is an Ubuntu search plugin that merges all music sources into one.
 Author=Canonical Ltd.
-Art=@SCOPES_DATADIR@/musicaggregator/musicaggregator-screenshot.jpg
-Icon=@SCOPES_DATADIR@/mediascanner-music/music-scope.png
+Art=./screenshot.jpg
+Icon=./icon.png
 _SearchHint=Search music
 HotKey=
 LocationDataNeeded=true
@@ -13,4 +13,3 @@ LogoOverlayColor=#26000000
 
 [Desktop Entry]
 X-Ubuntu-Gettext-Domain=unity-scope-musicaggregator
-
