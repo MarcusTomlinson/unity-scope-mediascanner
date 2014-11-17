@@ -1,3 +1,18 @@
+unity-scope-mediascanner (0.2+15.04.20141117.1~rtm-0ubuntu1) 14.09; urgency=low
+
+  [ James Henstridge ]
+  * Add support for building as click packages.
+
+  [ Xavi Garcia ]
+  * Youtube settings added to music aggregator
+
+  [ Pawel Stolowski ]
+  * Add support for building as click packages.
+  * Cherry-picked support for aggregation of results from youtube, vimeo
+    and soundcloud n Music/Videos.
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Mon, 17 Nov 2014 15:43:36 +0000
+
 unity-scope-mediascanner (0.2+15.04.20141110~rtm-0ubuntu1) 14.09; urgency=low
 
   [ CI bot ]
