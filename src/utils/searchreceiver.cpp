@@ -39,7 +39,10 @@ SearchReceiver::SearchReceiver(Category::SCPtr target_cat, SearchReplyProxy cons
 
 void SearchReceiver::push(CategorisedResult result)
 {
-    result.set_category(category_);
-    upstream()->push(result);
-    set_ready();
+    if (result_filter_(result))
+    {
+        result.set_category(category_);
+        upstream()->push(result);
+        set_ready();
+    }
 }
