@@ -30,8 +30,7 @@
 
 #include "../utils/i18n.h"
 #include "videoaggregatorquery.h"
-#include "../utils/resultforwarder.h"
-#include "../utils/bufferedresultforwarder.h"
+#include "../utils/searchreceiver.h"
 
 using namespace unity::scopes;
 
@@ -72,25 +71,6 @@ static char SEARCH_CATEGORY_DEFINITION[] = R"(
 }
 )";
 
-class VideoResultForwarder : public BufferedResultForwarder {
-public:
-    VideoResultForwarder(SearchReplyProxy const &upstream, Category::SCPtr const& category) :
-        BufferedResultForwarder(upstream), category(category) {
-    }
-
-    virtual void push(Category::SCPtr const &cat) override {
-        /* nothing: we replace the subscope categories */
-    }
-
-    virtual void push(CategorisedResult result) override {
-        result.set_category(category);
-        BufferedResultForwarder::push(std::move(result));
-    }
-
-private:
-    Category::SCPtr category;
-};
-
 VideoAggregatorQuery::VideoAggregatorQuery(CannedQuery const& query, SearchMetadata const& hints, std::vector<ScopeMetadata> subscopes) :
     SearchQueryBase(query, hints),
     subscopes(subscopes) {
@@ -109,7 +89,7 @@ void VideoAggregatorQuery::run(unity::scopes::SearchReplyProxy const& parent_rep
     const FilterState filter_state;
     const VariantMap config = settings();
 
-    auto first_reply = std::make_shared<ResultForwarder>(parent_reply);
+    auto first_reply = std::make_shared<utility::BufferedResultForwarder>(parent_reply);
 
     // Create forwarders for the other sub-scopes
     for (unsigned int i = 1; i < subscopes.size(); i++) {
@@ -140,8 +120,7 @@ void VideoAggregatorQuery::run(unity::scopes::SearchReplyProxy const& parent_rep
                 scope_id, title, "" /* icon */, category_query,
                 CategoryRenderer(SEARCH_CATEGORY_DEFINITION));
         }
-        auto subscope_reply = std::make_shared<VideoResultForwarder>(parent_reply, category);
-        first_reply->add_observer(subscope_reply);
+        auto subscope_reply = std::make_shared<SearchReceiver>(category, parent_reply, first_reply);
         subsearch(metadata.proxy(), query_string, department_id, filter_state,
                   subscope_reply);
     }

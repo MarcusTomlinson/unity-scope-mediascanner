@@ -49,7 +49,6 @@ private:
     unity::scopes::ScopeProxy sevendigital_scope;
     unity::scopes::ScopeProxy songkick_scope;
     unity::scopes::ScopeProxy youtube_scope;
-    static const std::string grooveshark_songs_category_id;
 };
 
 #endif
