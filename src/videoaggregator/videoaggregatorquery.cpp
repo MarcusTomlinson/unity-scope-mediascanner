@@ -89,10 +89,11 @@ void VideoAggregatorQuery::run(unity::scopes::SearchReplyProxy const& parent_rep
     const FilterState filter_state;
     const VariantMap config = settings();
 
-    auto first_reply = std::make_shared<utility::BufferedResultForwarder>(parent_reply);
+    std::shared_ptr<SearchReceiver> fwd;
 
-    // Create forwarders for the other sub-scopes
-    for (unsigned int i = 1; i < subscopes.size(); i++) {
+    std::vector<std::shared_ptr<SearchReceiver>> forwarders(subscopes.size());
+    // Create forwarders for all scopes
+    for (int i = subscopes.size() - 1; i>=0; i--) {
         const auto &metadata = subscopes[i];
         const std::string scope_id = metadata.scope_id();
         try {
@@ -120,10 +121,12 @@ void VideoAggregatorQuery::run(unity::scopes::SearchReplyProxy const& parent_rep
                 scope_id, title, "" /* icon */, category_query,
                 CategoryRenderer(SEARCH_CATEGORY_DEFINITION));
         }
-        auto subscope_reply = std::make_shared<SearchReceiver>(category, parent_reply, first_reply);
-        subsearch(metadata.proxy(), query_string, department_id, filter_state,
-                  subscope_reply);
+        auto subscope_reply = std::make_shared<SearchReceiver>(category, parent_reply, fwd);
+        forwarders[i] = fwd = subscope_reply;
     }
-    subsearch(subscopes[0].proxy(), query_string, department_id, filter_state,
-              first_reply);
+
+    for (int i = 0; i < subscopes.size(); i++)
+    {
+        subsearch(subscopes[i].proxy(), query_string, department_id, filter_state, forwarders[i]);
+    }
 }

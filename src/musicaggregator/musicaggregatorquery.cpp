@@ -245,39 +245,6 @@ static char YOUTUBE_SEARCH_CATEGORY_DEFINITION[] = R"(
   }
 }
 )";
-/*
-typedef std::function<bool(const CategorisedResult& res)> ResultFilterFunction;
-
-class SearchReceiver : public utility::BufferedResultForwarder
-{
-public:
-    SearchReceiver(Category::SCPtr target_cat, SearchReplyProxy const& upstream, ResultFilterFunction const& result_filter = [](const CategorisedResult&) {
-            return true; })
-        : utility::BufferedResultForwarder(upstream),
-          category_(target_cat),
-          result_filter_(result_filter)
-    {
-    }
-
-    SearchReceiver(Category::SCPtr target_cat, SearchReplyProxy const& upstream, utility::BufferedResultForwarder::SPtr const& next_forwarder,
-            ResultFilterFunction const& result_filter = [](const CategorisedResult&) { return true; })
-        : utility::BufferedResultForwarder(upstream, next_forwarder),
-          category_(target_cat),
-          result_filter_(result_filter)
-    {
-    }
-
-    void push(CategorisedResult result) override
-    {
-        result.set_category(category_);
-        upstream()->push(result);
-        set_ready();
-    }
-
-private:
-    unity::scopes::Category::SCPtr category_;
-    ResultFilterFunction result_filter_;
-};*/
 
 MusicAggregatorQuery::MusicAggregatorQuery(CannedQuery const& query, SearchMetadata const& hints,
         ScopeProxy local_scope,
@@ -306,7 +273,7 @@ void MusicAggregatorQuery::cancelled() {
 void MusicAggregatorQuery::run(unity::scopes::SearchReplyProxy const& parent_reply)
 {
     std::vector<utility::BufferedResultForwarder::SPtr> replies;
-    std::vector<unity::scopes::ScopeProxy> scopes({local_scope});
+    std::vector<unity::scopes::ScopeProxy> scopes;
     const std::string department_id = "aggregated:musicaggregator";
 
     const CannedQuery mymusic_query(MusicAggregatorScope::LOCALSCOPE, query().query_string(), "");
@@ -341,24 +308,12 @@ void MusicAggregatorQuery::run(unity::scopes::SearchReplyProxy const& parent_rep
 
 
     std::shared_ptr<SearchReceiver> previous;
-    auto local_reply = std::make_shared<SearchReceiver>(mymusic_cat, parent_reply);
-    replies.push_back(local_reply);
-    previous = local_reply;
-
-    if (sevendigital_scope)
+    if (grooveshark_scope)
     {
-        scopes.push_back(sevendigital_scope);
-        auto reply = std::make_shared<SearchReceiver>(sevendigital_cat, parent_reply, previous);
-        replies.push_back(reply);
-        previous = reply;
-    }
-
-    if (soundcloud_scope)
-    {
-        scopes.push_back(soundcloud_scope);
-        auto reply = std::make_shared<SearchReceiver>(soundcloud_cat, parent_reply, previous, [](CategorisedResult const& result) -> bool {
-                return result.category()->id() != "soundcloud_login_nag";
-                }
+        scopes.push_back(grooveshark_scope);
+        auto reply = std::make_shared<SearchReceiver>(grooveshark_cat, parent_reply, previous, [](CategorisedResult const& result) -> bool {
+                return result.category()->id() != "cat_0";
+            }
         );
         replies.push_back(reply);
         previous = reply;
@@ -373,19 +328,22 @@ void MusicAggregatorQuery::run(unity::scopes::SearchReplyProxy const& parent_rep
         replies.push_back(reply);
         previous = reply;
     }
-    if (grooveshark_scope)
+    if (soundcloud_scope)
     {
-        scopes.push_back(grooveshark_scope);
-        auto reply = std::make_shared<SearchReceiver>(grooveshark_cat, parent_reply, previous, [](CategorisedResult const& result) -> bool {
-                return result.category()->id() != "cat_0";
-            }
+        scopes.push_back(soundcloud_scope);
+        auto reply = std::make_shared<SearchReceiver>(soundcloud_cat, parent_reply, previous, [](CategorisedResult const& result) -> bool {
+                return result.category()->id() != "soundcloud_login_nag";
+                }
         );
         replies.push_back(reply);
         previous = reply;
     }
-    if (soundcloud_scope)
+    if (sevendigital_scope)
     {
-        // TODO when available
+        scopes.push_back(sevendigital_scope);
+        auto reply = std::make_shared<SearchReceiver>(sevendigital_cat, parent_reply, previous);
+        replies.push_back(reply);
+        previous = reply;
     }
     if (youtube_scope)
     {
@@ -396,6 +354,13 @@ void MusicAggregatorQuery::run(unity::scopes::SearchReplyProxy const& parent_rep
         );
         replies.push_back(reply);
         previous = reply;
+    }
+
+    // local scope
+    {
+        scopes.push_back(local_scope);
+        auto local_reply = std::make_shared<SearchReceiver>(mymusic_cat, parent_reply, previous);
+        replies.push_back(local_reply);
     }
 
     // dispatch search to subscopes
