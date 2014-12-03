@@ -247,7 +247,7 @@ static char YOUTUBE_SEARCH_CATEGORY_DEFINITION[] = R"(
 }
 )";
 
-const std::string MusicAggregatorQuery::grooveshark_songs_category_id = "cat_0";
+const std::string MusicAggregatorQuery::grooveshark_songs_category_id = "cat_songs";
 
 MusicAggregatorQuery::MusicAggregatorQuery(CannedQuery const& query, SearchMetadata const& hints,
         ScopeProxy local_scope,
