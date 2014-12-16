@@ -1,3 +1,11 @@
+unity-scope-mediascanner (0.2+15.04.20141216~rtm-0ubuntu1) 14.09; urgency=low
+
+  [ Pawel Stolowski ]
+  * Set ids of aggreated scopes via ChildScopes ini option (cherry
+    picked rev. 219 of trunk) (LP: #1368670)
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Tue, 16 Dec 2014 16:19:39 +0000
+
 unity-scope-mediascanner (0.2+15.04.20141117.1~rtm-0ubuntu1) 14.09; urgency=low
 
   [ James Henstridge ]
