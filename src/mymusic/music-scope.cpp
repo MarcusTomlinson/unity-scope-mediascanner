@@ -90,6 +90,27 @@ static const char SONGS_CATEGORY_DEFINITION[] = R"(
   }
 }
 )";
+
+static const char SONGS_CATEGORY_NO_PLAYBACK_DEFINITION[] = R"(
+{
+  "schema-version": 1,
+  "template": {
+    "category-layout": "grid",
+    "card-size": "large",
+    "card-layout" : "horizontal"
+  },
+  "components": {
+    "title": "title",
+    "art": {
+      "field": "art",
+      "fallback": "@FALLBACK@"
+    },
+    "subtitle": "artist"
+  }
+}
+)";
+
+
 static const char ALBUMS_CATEGORY_DEFINITION[] = R"(
 {
   "schema-version": 1,
@@ -209,6 +230,25 @@ static const char SEARCH_SONGS_CATEGORY_DEFINITION[] = R"(
     "quick-preview-data": {
         "field": "audio-data"
     }
+  }
+}
+)";
+
+static const char SEARCH_SONGS_CATEGORY_NO_PLAYBACK_DEFINITION[] = R"(
+{
+  "schema-version": 1,
+  "template": {
+    "category-layout": "grid",
+    "card-layout" : "horizontal",
+    "card-size": "large"
+  },
+  "components": {
+    "title": "title",
+    "art":  {
+      "field": "art",
+      "fallback": "@FALLBACK@"
+    },
+    "subtitle": "artist"
   }
 }
 )";
@@ -532,7 +572,7 @@ void MusicQuery::query_songs(unity::scopes::SearchReplyProxy const&reply, Catego
 
 void MusicQuery::query_songs_by_artist(unity::scopes::SearchReplyProxy const &reply, const std::string& artist) const
 {
-    CategoryRenderer renderer = make_renderer(query().query_string() == "" ? SONGS_CATEGORY_DEFINITION : SEARCH_SONGS_CATEGORY_DEFINITION, MISSING_ALBUM_ART);
+    CategoryRenderer renderer = make_renderer(query().query_string() == "" ? SONGS_CATEGORY_NO_PLAYBACK_DEFINITION : SEARCH_SONGS_CATEGORY_NO_PLAYBACK_DEFINITION, MISSING_ALBUM_ART);
     auto cat = reply->register_category("songs", _("Tracks"), SONGS_CATEGORY_ICON, renderer);
 
     mediascanner::Filter filter;
