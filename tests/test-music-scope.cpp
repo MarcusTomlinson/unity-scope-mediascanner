@@ -191,8 +191,10 @@ TEST_F(MusicScopeTest, QueryResult) {
     EXPECT_CALL(reply, register_category("albums", _, _, _))
         .WillOnce(Return(albums_category));
 
-    CannedQuery q1("mediascanner-music", "The John Butler Trio", "");
-    q1.set_user_data(Variant("albums_of_artist"));
+    CannedQuery q1("mediascanner-music");
+    VariantMap user_data;
+    user_data["albums_of_artist"] = Variant("The John Butler Trio");
+    q1.set_user_data(Variant(user_data));
     EXPECT_CALL(reply, push(Matcher<CategorisedResult const&>(AllOf(
             ResultUriMatchesCannedQuery(q1),
             ResultProp("title", "The John Butler Trio")))))
@@ -228,8 +230,10 @@ TEST_F(MusicScopeTest, ShortQuery) {
     SearchMetadata hints("en_AU", "phone");
     auto query = scope->search(q, hints);
 
-    CannedQuery q1("mediascanner-music", "The John Butler Trio", "");
-    q1.set_user_data(Variant("albums_of_artist"));
+    CannedQuery q1("mediascanner-music");
+    VariantMap user_data;
+    user_data["albums_of_artist"] = Variant("The John Butler Trio");
+    q1.set_user_data(Variant(user_data));
 
     Category::SCPtr artists_category = std::make_shared<unity::scopes::testing::Category>(
         "artists", "Artists", "icon", CategoryRenderer());
@@ -279,16 +283,21 @@ TEST_F(MusicScopeTest, SurfacingQuery) {
     EXPECT_CALL(reply, register_category("artists", _, _, _))
         .WillOnce(Return(albums_category));
 
-    CannedQuery q1("mediascanner-music", "Spiderbait", "");
-    q1.set_user_data(Variant("albums_of_artist"));
+    CannedQuery q1("mediascanner-music");
+    VariantMap user_data;
+    user_data["albums_of_artist"] = Variant("Spiderbait");
+    q1.set_user_data(Variant(user_data));
+
     EXPECT_CALL(reply, push(Matcher<CategorisedResult const&>(AllOf(
                         ResultUriMatchesCannedQuery(q1),
                         ResultProp("title", "Spiderbait")
                         ))))
         .WillOnce(Return(true));
 
-    CannedQuery q2("mediascanner-music", "The John Butler Trio", "");
-    q2.set_user_data(Variant("albums_of_artist"));
+    CannedQuery q2("mediascanner-music");
+    user_data["albums_of_artist"] = Variant("The John Butler Trio");
+    q2.set_user_data(Variant(user_data));
+
     EXPECT_CALL(reply, push(Matcher<CategorisedResult const&>(AllOf(
                         ResultUriMatchesCannedQuery(q2),
                         ResultProp("title", "The John Butler Trio"))

@@ -344,11 +344,16 @@ void MusicQuery::run(SearchReplyProxy const&reply) {
         auto const genre = current_department.substr(index + 1);
         query_albums_by_genre(reply, genre);
     }
-    else if (query().has_user_data() && query().user_data().get_string() == "albums_of_artist")
+    else if (query().has_user_data() && query().user_data().which() == Variant::Dict)
     {
-        const std::string artist = query().query_string();
-        query_albums_by_artist(reply, artist);
-        query_songs_by_artist(reply, artist);
+        auto const var = query().user_data().get_dict();
+        auto it = var.find("albums_of_artist");
+        if (it != var.end())
+        {
+            const std::string artist = it->second.get_string();
+            query_albums_by_artist(reply, artist);
+            query_songs_by_artist(reply, artist);
+        }
     }
     else // empty department id - default view
     {
@@ -459,8 +464,9 @@ void MusicQuery::query_artists(unity::scopes::SearchReplyProxy const& reply, Cat
     filter.setLimit(MAX_RESULTS);
     for (const auto &artist: scope.store->queryArtists(query().query_string(), filter))
     {
-        artist_search.set_query_string(artist);
-        artist_search.set_user_data(Variant("albums_of_artist"));
+        VariantMap user_data;
+        user_data["albums_of_artist"] = Variant(artist);
+        artist_search.set_user_data(Variant(user_data));
 
         CategorisedResult res(cat);
         res.set_uri(artist_search.to_uri());
@@ -681,9 +687,10 @@ void MusicQuery::query_albums_by_artist(unity::scopes::SearchReplyProxy const &r
             }
 
             CannedQuery artist_search(query());
+            VariantMap user_data;
+            user_data["albums_of_artist"] = Variant(artist);
             artist_search.set_department_id("");
-            artist_search.set_query_string(artist);
-            artist_search.set_user_data(Variant("albums_of_artist"));
+            artist_search.set_user_data(Variant(user_data));
 
             CategorisedResult artist_info(biocat);
             artist_info.set_uri(artist_search.to_uri());
