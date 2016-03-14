@@ -196,6 +196,7 @@ static const char SEARCH_SONGS_CATEGORY_DEFINITION[] = R"(
   "template": {
     "category-layout": "grid",
     "card-layout" : "horizontal",
+    "quick-preview-type" : "audio",
     "card-size": "large"
   },
   "components": {
@@ -204,7 +205,10 @@ static const char SEARCH_SONGS_CATEGORY_DEFINITION[] = R"(
       "field": "art",
       "fallback": "@FALLBACK@"
     },
-    "subtitle": "artist"
+    "subtitle": "artist",
+    "quick-preview-data": {
+        "field": "audio-data"
+    }
   }
 }
 )";
@@ -513,10 +517,12 @@ void MusicQuery::query_songs(unity::scopes::SearchReplyProxy const&reply, Catego
     auto const songs = scope.store->query(query().query_string(), AudioMedia, filter);
     static const std::vector<mediascanner::MediaFile> empty_playlist;
 
+    const bool inline_playback = ((query().department_id() == "tracks") || search_metadata().is_aggregated());
+
     for (const auto &media : songs) {
-        // Inline playback should only be used in surfacing mode.
+        // Inline playback should only be used when aggregated or in tracks department.
         // Attach the playlist with all songs to every card (same playlist for every card).
-        if(!reply->push(create_song_result(cat, media, surfacing, surfacing ? songs : empty_playlist)))
+        if(!reply->push(create_song_result(cat, media, inline_playback, inline_playback ? songs : empty_playlist)))
         {
             return;
         }
