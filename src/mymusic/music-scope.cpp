@@ -546,7 +546,9 @@ void MusicQuery::query_songs(unity::scopes::SearchReplyProxy const&reply, Catego
     auto cat = override_category;
     if (!cat)
     {
-        CategoryRenderer renderer = make_renderer((surfacing || inline_playback) ? SONGS_CATEGORY_DEFINITION : SEARCH_SONGS_CATEGORY_DEFINITION, MISSING_ALBUM_ART);
+        CategoryRenderer renderer = make_renderer(surfacing ? (inline_playback ? SONGS_CATEGORY_DEFINITION : SONGS_CATEGORY_NO_PLAYBACK_DEFINITION)
+                                                            : (inline_playback ? SEARCH_SONGS_CATEGORY_DEFINITION : SEARCH_SONGS_CATEGORY_NO_PLAYBACK_DEFINITION),
+                                                            MISSING_ALBUM_ART);
         cat = reply->register_category("songs", surfacing ? "" : _("Tracks"), SONGS_CATEGORY_ICON, renderer);
     }
     mediascanner::Filter filter;
