@@ -541,10 +541,12 @@ void MusicQuery::query_artists(unity::scopes::SearchReplyProxy const& reply, Cat
 
 void MusicQuery::query_songs(unity::scopes::SearchReplyProxy const&reply, Category::SCPtr const& override_category, bool sortByMtime) const {
     const bool surfacing = query().query_string().empty();
+    const bool inline_playback = ((query().department_id() == "tracks") || search_metadata().is_aggregated());
+
     auto cat = override_category;
     if (!cat)
     {
-        CategoryRenderer renderer = make_renderer(surfacing ? SONGS_CATEGORY_DEFINITION : SEARCH_SONGS_CATEGORY_DEFINITION, MISSING_ALBUM_ART);
+        CategoryRenderer renderer = make_renderer((surfacing || inline_playback) ? SONGS_CATEGORY_DEFINITION : SEARCH_SONGS_CATEGORY_DEFINITION, MISSING_ALBUM_ART);
         cat = reply->register_category("songs", surfacing ? "" : _("Tracks"), SONGS_CATEGORY_ICON, renderer);
     }
     mediascanner::Filter filter;
@@ -557,8 +559,6 @@ void MusicQuery::query_songs(unity::scopes::SearchReplyProxy const&reply, Catego
     auto const songs = scope.store->query(query().query_string(), AudioMedia, filter);
     static const std::vector<mediascanner::MediaFile> empty_playlist;
 
-    const bool inline_playback = ((query().department_id() == "tracks") || search_metadata().is_aggregated());
-
     for (const auto &media : songs) {
         // Inline playback should only be used when aggregated or in tracks department.
         // Attach the playlist with all songs to every card (same playlist for every card).
@@ -567,7 +567,6 @@ void MusicQuery::query_songs(unity::scopes::SearchReplyProxy const&reply, Catego
             return;
         }
     }
-
 }
 
 void MusicQuery::query_songs_by_artist(unity::scopes::SearchReplyProxy const &reply, const std::string& artist) const
