@@ -90,6 +90,27 @@ static const char SONGS_CATEGORY_DEFINITION[] = R"(
   }
 }
 )";
+
+static const char SONGS_CATEGORY_NO_PLAYBACK_DEFINITION[] = R"(
+{
+  "schema-version": 1,
+  "template": {
+    "category-layout": "grid",
+    "card-size": "large",
+    "card-layout" : "horizontal"
+  },
+  "components": {
+    "title": "title",
+    "art": {
+      "field": "art",
+      "fallback": "@FALLBACK@"
+    },
+    "subtitle": "artist"
+  }
+}
+)";
+
+
 static const char ALBUMS_CATEGORY_DEFINITION[] = R"(
 {
   "schema-version": 1,
@@ -191,6 +212,29 @@ static const char SEARCH_CATEGORY_DEFINITION[] = R"(
 )";
 
 static const char SEARCH_SONGS_CATEGORY_DEFINITION[] = R"(
+{
+  "schema-version": 1,
+  "template": {
+    "category-layout": "grid",
+    "card-layout" : "horizontal",
+    "quick-preview-type" : "audio",
+    "card-size": "large"
+  },
+  "components": {
+    "title": "title",
+    "art":  {
+      "field": "art",
+      "fallback": "@FALLBACK@"
+    },
+    "subtitle": "artist",
+    "quick-preview-data": {
+        "field": "audio-data"
+    }
+  }
+}
+)";
+
+static const char SEARCH_SONGS_CATEGORY_NO_PLAYBACK_DEFINITION[] = R"(
 {
   "schema-version": 1,
   "template": {
@@ -344,11 +388,16 @@ void MusicQuery::run(SearchReplyProxy const&reply) {
         auto const genre = current_department.substr(index + 1);
         query_albums_by_genre(reply, genre);
     }
-    else if (query().has_user_data() && query().user_data().get_string() == "albums_of_artist")
+    else if (query().has_user_data() && query().user_data().which() == Variant::Dict)
     {
-        const std::string artist = query().query_string();
-        query_albums_by_artist(reply, artist);
-        query_songs_by_artist(reply, artist);
+        auto const var = query().user_data().get_dict();
+        auto it = var.find("albums_of_artist");
+        if (it != var.end())
+        {
+            const std::string artist = it->second.get_string();
+            query_albums_by_artist(reply, artist);
+            query_songs_by_artist(reply, artist);
+        }
     }
     else // empty department id - default view
     {
@@ -459,8 +508,9 @@ void MusicQuery::query_artists(unity::scopes::SearchReplyProxy const& reply, Cat
     filter.setLimit(MAX_RESULTS);
     for (const auto &artist: scope.store->queryArtists(query().query_string(), filter))
     {
-        artist_search.set_query_string(artist);
-        artist_search.set_user_data(Variant("albums_of_artist"));
+        VariantMap user_data;
+        user_data["albums_of_artist"] = Variant(artist);
+        artist_search.set_user_data(Variant(user_data));
 
         CategorisedResult res(cat);
         res.set_uri(artist_search.to_uri());
@@ -491,10 +541,14 @@ void MusicQuery::query_artists(unity::scopes::SearchReplyProxy const& reply, Cat
 
 void MusicQuery::query_songs(unity::scopes::SearchReplyProxy const&reply, Category::SCPtr const& override_category, bool sortByMtime) const {
     const bool surfacing = query().query_string().empty();
+    const bool inline_playback = ((query().department_id() == "tracks") || search_metadata().is_aggregated());
+
     auto cat = override_category;
     if (!cat)
     {
-        CategoryRenderer renderer = make_renderer(surfacing ? SONGS_CATEGORY_DEFINITION : SEARCH_SONGS_CATEGORY_DEFINITION, MISSING_ALBUM_ART);
+        CategoryRenderer renderer = make_renderer(surfacing ? (inline_playback ? SONGS_CATEGORY_DEFINITION : SONGS_CATEGORY_NO_PLAYBACK_DEFINITION)
+                                                            : (inline_playback ? SEARCH_SONGS_CATEGORY_DEFINITION : SEARCH_SONGS_CATEGORY_NO_PLAYBACK_DEFINITION),
+                                                            MISSING_ALBUM_ART);
         cat = reply->register_category("songs", surfacing ? "" : _("Tracks"), SONGS_CATEGORY_ICON, renderer);
     }
     mediascanner::Filter filter;
@@ -508,19 +562,18 @@ void MusicQuery::query_songs(unity::scopes::SearchReplyProxy const&reply, Catego
     static const std::vector<mediascanner::MediaFile> empty_playlist;
 
     for (const auto &media : songs) {
-        // Inline playback should only be used in surfacing mode.
+        // Inline playback should only be used when aggregated or in tracks department.
         // Attach the playlist with all songs to every card (same playlist for every card).
-        if(!reply->push(create_song_result(cat, media, surfacing, surfacing ? songs : empty_playlist)))
+        if(!reply->push(create_song_result(cat, media, inline_playback, inline_playback ? songs : empty_playlist)))
         {
             return;
         }
     }
-
 }
 
 void MusicQuery::query_songs_by_artist(unity::scopes::SearchReplyProxy const &reply, const std::string& artist) const
 {
-    CategoryRenderer renderer = make_renderer(query().query_string() == "" ? SONGS_CATEGORY_DEFINITION : SEARCH_SONGS_CATEGORY_DEFINITION, MISSING_ALBUM_ART);
+    CategoryRenderer renderer = make_renderer(query().query_string() == "" ? SONGS_CATEGORY_NO_PLAYBACK_DEFINITION : SEARCH_SONGS_CATEGORY_NO_PLAYBACK_DEFINITION, MISSING_ALBUM_ART);
     auto cat = reply->register_category("songs", _("Tracks"), SONGS_CATEGORY_ICON, renderer);
 
     mediascanner::Filter filter;
@@ -681,9 +734,10 @@ void MusicQuery::query_albums_by_artist(unity::scopes::SearchReplyProxy const &r
             }
 
             CannedQuery artist_search(query());
+            VariantMap user_data;
+            user_data["albums_of_artist"] = Variant(artist);
             artist_search.set_department_id("");
-            artist_search.set_query_string(artist);
-            artist_search.set_user_data(Variant("albums_of_artist"));
+            artist_search.set_user_data(Variant(user_data));
 
             CategorisedResult artist_info(biocat);
             artist_info.set_uri(artist_search.to_uri());
