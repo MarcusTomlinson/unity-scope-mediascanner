@@ -153,6 +153,7 @@ static const char AGGREGATED_CATEGORY_DEFINITION[] = R"(
     "category-layout": "grid",
     "card-size": "large",
     "collapsed-rows": 3,
+    "expandable": false,
     "card-layout": "horizontal",
     "quick-preview-type" : "audio"
   },

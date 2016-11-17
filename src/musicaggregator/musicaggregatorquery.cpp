@@ -54,7 +54,9 @@ static const char SEVENDIGITAL_CATEGORY_DEFINITION[] = R"(
     "template":
     {
         "category-layout": "grid",
-        "card-size": "medium"
+        "card-size": "medium",
+        "collapsed-rows": 1,
+        "expandable": false
     }
 }
 )";
@@ -157,7 +159,9 @@ static char YOUTUBE_SURFACING_CATEGORY_DEFINITION[] = R"(
   "schema-version": 1,
   "template": {
     "category-layout": "grid",
-    "card-size": "medium"
+    "card-size": "medium",
+    "collapsed-rows": 1,
+    "expandable": false
   },
   "components": {
     "title": "title",
@@ -343,13 +347,13 @@ void MusicAggregatorQuery::run(unity::scopes::SearchReplyProxy const& parent_rep
             {
                 dept = "newreleases";
             }
-            metadata.set_cardinality(2);
+            metadata.set_cardinality(20);
         }
         else if (scopes[i].id == MusicAggregatorScope::LOCALSCOPE)
         {
             if (empty_search)
             {
-                metadata.set_cardinality(3);
+                metadata.set_cardinality(20);
             }
         }
         else if (scopes[i].id == MusicAggregatorScope::SOUNDCLOUD)
