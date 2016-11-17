@@ -1,3 +1,11 @@
+unity-scope-mediascanner (0.2+17.04.20161117-0ubuntu1) zesty; urgency=medium
+
+  * Request more results and use new expandable: false attribute in
+    conjuction with 'collapsed-rows:1' to make results look better on
+    different form factors.
+
+ -- Pawel Stolowski <pawel.stolowski@canonical.com>  Thu, 17 Nov 2016 17:07:37 +0000
+
 unity-scope-mediascanner (0.2+16.10.20160620.1-0ubuntu1) yakkety; urgency=medium
 
   * Enable sharing via preview for local videos.
