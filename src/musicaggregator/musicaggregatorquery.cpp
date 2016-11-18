@@ -374,7 +374,7 @@ void MusicAggregatorQuery::run(unity::scopes::SearchReplyProxy const& parent_rep
         {
             if (empty_search)
             {
-                metadata.set_cardinality(2);
+                metadata.set_cardinality(20);
             }
             dept = department_id;
         }
